@@ -4,16 +4,16 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.theokanning.openai.DeleteResult;
-import com.theokanning.openai.OpenAiApi;
-import com.theokanning.openai.OpenAiError;
-import com.theokanning.openai.OpenAiHttpException;
+import com.theokanning.openai.*;
 import com.theokanning.openai.completion.CompletionChunk;
 import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.completion.CompletionResult;
 import com.theokanning.openai.completion.chat.ChatCompletionChunk;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
+import com.theokanning.openai.conversation.chat.ChatConversationRequest;
+import com.theokanning.openai.conversation.chat.ConversationMessage;
+import com.theokanning.openai.conversation.chat.chunk.ChatConversationChunk;
 import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.edit.EditResult;
 import com.theokanning.openai.embedding.EmbeddingRequest;
@@ -29,14 +29,13 @@ import com.theokanning.openai.image.ImageResult;
 import com.theokanning.openai.model.Model;
 import com.theokanning.openai.moderation.ModerationRequest;
 import com.theokanning.openai.moderation.ModerationResult;
-
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import okhttp3.*;
+import retrofit2.Call;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
-import retrofit2.Call;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
@@ -47,26 +46,35 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class OpenAiService {
+public class OpenChatgptService {
 
-    public static String BASE_URL = "https://api.openai.com/";
+    public static String BASE_URL = "https://api.pawan.krd/";
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(10);
     private static final ObjectMapper errorMapper = defaultObjectMapper();
 
-    private final OpenAiApi api;
+    private final OpenChatgptApi api;
     private final ExecutorService executorService;
 
-    public OpenAiService(final String token,final String api) {
+    public OpenChatgptService(final String token, final String api) {
         this(token, DEFAULT_TIMEOUT);
         BASE_URL = api;
     }
 
+    public static void main(String[] args) {
+        String token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik1UaEVOVUpHTkVNMVFURTRNMEZCTWpkQ05UZzVNRFUxUlRVd1FVSkRNRU13UmtGRVFrRXpSZyJ9.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL3Byb2ZpbGUiOnsiZW1haWwiOiJ0eWRpY2dwdDFAeWFob28uY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWV9LCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsidXNlcl9pZCI6InVzZXIteGFBVFNOVDBCOW1PNHhTVXVEc056aVg3In0sImlzcyI6Imh0dHBzOi8vYXV0aDAub3BlbmFpLmNvbS8iLCJzdWIiOiJhdXRoMHw2NDIxNTUzZjM5NTkzZDg0ZTQ2NTcxZTYiLCJhdWQiOlsiaHR0cHM6Ly9hcGkub3BlbmFpLmNvbS92MSIsImh0dHBzOi8vb3BlbmFpLm9wZW5haS5hdXRoMGFwcC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNjgwMTY0NzU1LCJleHAiOjE2ODEzNzQzNTUsImF6cCI6IlRkSkljYmUxNldvVEh0Tjk1bnl5d2g1RTR5T282SXRHIiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCBtb2RlbC5yZWFkIG1vZGVsLnJlcXVlc3Qgb3JnYW5pemF0aW9uLnJlYWQgb2ZmbGluZV9hY2Nlc3MifQ.2RJrrRtgUpgeF_uUqaDTdCFgmTsdnMiZEntvx7vEl7fQW-pToJj7AEvFUJOOjoX_lDmkGd5VESx3I2CmKwGgjwgFR0e5y11vIoXF4PLsGan-jtsAqmf0SHZF47vomYuCcRhCY1O3y7kquegqMt7GJrpxEEWIvQh8R1oWCmJJbt7N5rdo9l4ffDz4GXT_iyg9QnoU0rs-MHaq5olKMf961HaKT3Ma4uVPNESjfPTLGKvmibv5ndKGM0rIEInXmCWvar1bo3ZtKNiyYbdy5HOPQM8-OB-jHScbCKQ__ycfuwwXvCaXVzfeObe6KRNx73ShhDuPY1nvUpnyjl8-x7LAXQ";
+        OpenChatgptService service = new OpenChatgptService(token);
+        ConversationMessage message = new ConversationMessage("你好");
+        ChatConversationRequest request = new ChatConversationRequest("",message);
+        service.streamChatConversation(request).blockingForEach(obj->{
+            System.out.println(obj.toString());
+        });
+    }
     /**
      * Creates a new OpenAiService that wraps OpenAiApi
      *
      * @param token OpenAi token string "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
      */
-    public OpenAiService(final String token) {
+    public OpenChatgptService(final String token) {
         this(token, DEFAULT_TIMEOUT);
     }
 
@@ -76,7 +84,7 @@ public class OpenAiService {
      * @param token   OpenAi token string "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
      * @param timeout http read timeout, Duration.ZERO means no timeout
      */
-    public OpenAiService(final String token, final Duration timeout) {
+    public OpenChatgptService(final String token, final Duration timeout) {
         this(defaultClient(token, timeout));
     }
 
@@ -85,7 +93,7 @@ public class OpenAiService {
      *
      * @param client OkHttpClient to be used for api calls
      */
-    public OpenAiService(OkHttpClient client){
+    public OpenChatgptService(OkHttpClient client){
         this(buildApi(client), client.dispatcher().executorService());
     }
 
@@ -97,171 +105,19 @@ public class OpenAiService {
      * @param api OpenAiApi instance to use for all methods
      * @param executorService the ExecutorService from client.dispatcher().executorService()
      */
-    public OpenAiService(final OpenAiApi api, final ExecutorService executorService) {
+    public OpenChatgptService(final OpenChatgptApi api, final ExecutorService executorService) {
         this.api = api;
         this.executorService = executorService;
     }
 
-    public List<Model> listModels() {
-        return execute(api.listModels()).data;
-    }
-
-    public Model getModel(String modelId) {
-        return execute(api.getModel(modelId));
-    }
-
-    public CompletionResult createCompletion(CompletionRequest request) {
-        return execute(api.createCompletion(request));
-    }
-
-    public Flowable<byte[]> streamCompletionBytes(CompletionRequest request) {
-		request.setStream(true);
-
-		return stream(api.createCompletionStream(request), true).map(sse -> {
-			return sse.toBytes();
-		});
-	}
-    
-    public Flowable<CompletionChunk> streamCompletion(CompletionRequest request) {
-		request.setStream(true);
-        
-		return stream(api.createCompletionStream(request), CompletionChunk.class);
-	}
-    
-    public ChatCompletionResult createChatCompletion(ChatCompletionRequest request) {
-        return execute(api.createChatCompletion(request));
-    }
-
-    public Flowable<byte[]> streamChatCompletionBytes(ChatCompletionRequest request) {
-		request.setStream(true);
-
-		return stream(api.createChatCompletionStream(request), true).map(sse -> {
-			return sse.toBytes();
-		});
+    public Flowable<byte[]> streamChatConversationBytes(ChatConversationRequest request) {
+		return stream(api.createChatConversationStream(request), true).map(sse -> sse.toBytes());
 	}
 
-	public Flowable<ChatCompletionChunk> streamChatCompletion(ChatCompletionRequest request) {
-		request.setStream(true);
-        
-		return stream(api.createChatCompletionStream(request), ChatCompletionChunk.class);
+	public Flowable<ChatConversationChunk> streamChatConversation(ChatConversationRequest request) {
+		return stream(api.createChatConversationStream(request), ChatConversationChunk.class);
 	}
 
-    public EditResult createEdit(EditRequest request) {
-        return execute(api.createEdit(request));
-    }
-
-    public EmbeddingResult createEmbeddings(EmbeddingRequest request) {
-        return execute(api.createEmbeddings(request));
-    }
-
-    public List<File> listFiles() {
-        return execute(api.listFiles()).data;
-    }
-
-    public File uploadFile(String purpose, String filepath) {
-        java.io.File file = new java.io.File(filepath);
-        RequestBody purposeBody = RequestBody.create(okhttp3.MultipartBody.FORM, purpose);
-        RequestBody fileBody = RequestBody.create(MediaType.parse("text"), file);
-        MultipartBody.Part body = MultipartBody.Part.createFormData("file", filepath, fileBody);
-
-        return execute(api.uploadFile(purposeBody, body));
-    }
-
-    public DeleteResult deleteFile(String fileId) {
-        return execute(api.deleteFile(fileId));
-    }
-
-    public File retrieveFile(String fileId) {
-        return execute(api.retrieveFile(fileId));
-    }
-
-    public FineTuneResult createFineTune(FineTuneRequest request) {
-        return execute(api.createFineTune(request));
-    }
-
-    public CompletionResult createFineTuneCompletion(CompletionRequest request) {
-        return execute(api.createFineTuneCompletion(request));
-    }
-
-    public List<FineTuneResult> listFineTunes() {
-        return execute(api.listFineTunes()).data;
-    }
-
-    public FineTuneResult retrieveFineTune(String fineTuneId) {
-        return execute(api.retrieveFineTune(fineTuneId));
-    }
-
-    public FineTuneResult cancelFineTune(String fineTuneId) {
-        return execute(api.cancelFineTune(fineTuneId));
-    }
-
-    public List<FineTuneEvent> listFineTuneEvents(String fineTuneId) {
-        return execute(api.listFineTuneEvents(fineTuneId)).data;
-    }
-
-    public DeleteResult deleteFineTune(String fineTuneId) {
-        return execute(api.deleteFineTune(fineTuneId));
-    }
-
-    public ImageResult createImage(CreateImageRequest request) {
-        return execute(api.createImage(request));
-    }
-
-    public ImageResult createImageEdit(CreateImageEditRequest request, String imagePath, String maskPath) {
-        java.io.File image = new java.io.File(imagePath);
-        java.io.File mask = null;
-        if (maskPath != null) {
-            mask = new java.io.File(maskPath);
-        }
-        return createImageEdit(request, image, mask);
-    }
-
-    public ImageResult createImageEdit(CreateImageEditRequest request, java.io.File image, java.io.File mask) {
-        RequestBody imageBody = RequestBody.create(MediaType.parse("image"), image);
-
-        MultipartBody.Builder builder = new MultipartBody.Builder()
-                .setType(MediaType.get("multipart/form-data"))
-                .addFormDataPart("prompt", request.getPrompt())
-                .addFormDataPart("size", request.getSize())
-                .addFormDataPart("response_format", request.getResponseFormat())
-                .addFormDataPart("image", "image", imageBody);
-
-        if (request.getN() != null) {
-            builder.addFormDataPart("n", request.getN().toString());
-        }
-
-        if (mask != null) {
-            RequestBody maskBody = RequestBody.create(MediaType.parse("image"), mask);
-            builder.addFormDataPart("mask", "mask", maskBody);
-        }
-
-        return execute(api.createImageEdit(builder.build()));
-    }
-
-    public ImageResult createImageVariation(CreateImageVariationRequest request, String imagePath) {
-        java.io.File image = new java.io.File(imagePath);
-        return createImageVariation(request, image);
-    }
-
-    public ImageResult createImageVariation(CreateImageVariationRequest request, java.io.File image) {
-        RequestBody imageBody = RequestBody.create(MediaType.parse("image"), image);
-
-        MultipartBody.Builder builder = new MultipartBody.Builder()
-                .setType(MediaType.get("multipart/form-data"))
-                .addFormDataPart("size", request.getSize())
-                .addFormDataPart("response_format", request.getResponseFormat())
-                .addFormDataPart("image", "image", imageBody);
-
-        if (request.getN() != null) {
-            builder.addFormDataPart("n", request.getN().toString());
-        }
-
-        return execute(api.createImageVariation(builder.build()));
-    }
-
-    public ModerationResult createModeration(ModerationRequest request) {
-        return execute(api.createModeration(request));
-    }
 
     /**
      * Calls the Open AI api, returns the response, and parses error messages if the request fails
@@ -330,11 +186,10 @@ public class OpenAiService {
         this.executorService.shutdown();
     }
 
-    public static OpenAiApi buildApi(OkHttpClient client) {
+    public static OpenChatgptApi buildApi(OkHttpClient client) {
         ObjectMapper mapper = defaultObjectMapper();
         Retrofit retrofit = defaultRetrofit(client, mapper);
-        
-        return retrofit.create(OpenAiApi.class);
+        return retrofit.create(OpenChatgptApi.class);
     }
 
     public static ObjectMapper defaultObjectMapper() {
