@@ -5,7 +5,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.theokanning.openai.OpenAiError;
 import com.theokanning.openai.OpenAiHttpException;
 
@@ -23,7 +26,15 @@ import retrofit2.Response;
  * SSE.
  */
 public class ResponseBodyCallback implements Callback<ResponseBody> {
-	private static final ObjectMapper errorMapper = OpenAiService.defaultObjectMapper();
+
+	public static ObjectMapper defaultObjectMapper() {
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+		return mapper;
+	}
+	private static final ObjectMapper errorMapper = defaultObjectMapper();
 
 	private FlowableEmitter<SSE> emitter;
 	private boolean emitDone = false;

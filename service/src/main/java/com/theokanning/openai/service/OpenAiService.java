@@ -14,6 +14,7 @@ import com.theokanning.openai.completion.CompletionResult;
 import com.theokanning.openai.completion.chat.ChatCompletionChunk;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionResult;
+import com.theokanning.openai.dashboard.credit.DashboardCreditSummary;
 import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.edit.EditResult;
 import com.theokanning.openai.embedding.EmbeddingRequest;
@@ -49,16 +50,32 @@ import java.util.concurrent.TimeUnit;
 
 public class OpenAiService {
 
-    public static String BASE_URL = "https://api.openai.com/";
+    private String apiUrl = "https://api.openai.com/";
+    private String token = "";
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(10);
-    private static final ObjectMapper errorMapper = defaultObjectMapper();
+    private final ObjectMapper errorMapper = defaultObjectMapper();
+    private OkHttpClient httpClient;
+    private OpenAiApi api;
+    private ExecutorService executorService;
 
-    private final OpenAiApi api;
-    private final ExecutorService executorService;
+    public String getApiUrl() {
+        return apiUrl;
+    }
 
-    public OpenAiService(final String token,final String api) {
-        this(token, DEFAULT_TIMEOUT);
-        BASE_URL = api;
+    public ObjectMapper getErrorMapper() {
+        return errorMapper;
+    }
+
+    public OkHttpClient getHttpClient() {
+        return httpClient;
+    }
+
+    public OpenAiApi getApi() {
+        return api;
+    }
+
+    public ExecutorService getExecutorService() {
+        return executorService;
     }
 
     /**
@@ -70,6 +87,11 @@ public class OpenAiService {
         this(token, DEFAULT_TIMEOUT);
     }
 
+    public OpenAiService(final String token, final String api) {
+        this(token, DEFAULT_TIMEOUT);
+        apiUrl = api;
+    }
+
     /**
      * Creates a new OpenAiService that wraps OpenAiApi
      *
@@ -77,30 +99,12 @@ public class OpenAiService {
      * @param timeout http read timeout, Duration.ZERO means no timeout
      */
     public OpenAiService(final String token, final Duration timeout) {
-        this(defaultClient(token, timeout));
+        this.token = token;
+        this.httpClient = this.defaultClient(token,timeout);
+        this.api = this.buildApi(httpClient);
+        this.executorService = httpClient.dispatcher().executorService();
     }
 
-    /**
-     * Creates a new OpenAiService that wraps OpenAiApi
-     *
-     * @param client OkHttpClient to be used for api calls
-     */
-    public OpenAiService(OkHttpClient client){
-        this(buildApi(client), client.dispatcher().executorService());
-    }
-
-    /**
-     * Creates a new OpenAiService that wraps OpenAiApi.
-     * The ExecutoryService must be the one you get from the client you created the api with
-     * otherwise shutdownExecutor() won't work. Use this if you need more customization.
-     *
-     * @param api OpenAiApi instance to use for all methods
-     * @param executorService the ExecutorService from client.dispatcher().executorService()
-     */
-    public OpenAiService(final OpenAiApi api, final ExecutorService executorService) {
-        this.api = api;
-        this.executorService = executorService;
-    }
 
     public List<Model> listModels() {
         return execute(api.listModels()).data;
@@ -116,7 +120,6 @@ public class OpenAiService {
 
     public Flowable<byte[]> streamCompletionBytes(CompletionRequest request) {
 		request.setStream(true);
-
 		return stream(api.createCompletionStream(request), true).map(sse -> {
 			return sse.toBytes();
 		});
@@ -148,6 +151,11 @@ public class OpenAiService {
 
     public EditResult createEdit(EditRequest request) {
         return execute(api.createEdit(request));
+    }
+
+
+    public DashboardCreditSummary getDashboardCreditGrants() {
+        return execute(api.getDashboardCreditGrants());
     }
 
     public EmbeddingResult createEmbeddings(EmbeddingRequest request) {
@@ -266,7 +274,7 @@ public class OpenAiService {
     /**
      * Calls the Open AI api, returns the response, and parses error messages if the request fails
      */
-    public static <T> T execute(Single<T> apiCall) {
+    public <T> T execute(Single<T> apiCall) {
         try {
             return apiCall.blockingGet();
         } catch (HttpException e) {
@@ -314,7 +322,7 @@ public class OpenAiService {
      * @param apiCall The api call
      * @param cl Class of type T to return
      */
-	public static <T> Flowable<T> stream(Call<ResponseBody> apiCall, Class<T> cl) {
+	public <T> Flowable<T> stream(Call<ResponseBody> apiCall, Class<T> cl) {
 		return stream(apiCall).map(sse -> {
 			return errorMapper.readValue(sse.getData(), cl);
 		});
@@ -330,14 +338,13 @@ public class OpenAiService {
         this.executorService.shutdown();
     }
 
-    public static OpenAiApi buildApi(OkHttpClient client) {
+    public OpenAiApi buildApi(OkHttpClient client) {
         ObjectMapper mapper = defaultObjectMapper();
         Retrofit retrofit = defaultRetrofit(client, mapper);
-        
         return retrofit.create(OpenAiApi.class);
     }
 
-    public static ObjectMapper defaultObjectMapper() {
+    public ObjectMapper defaultObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -345,9 +352,8 @@ public class OpenAiService {
         return mapper;
     }
 
-    public static OkHttpClient defaultClient(String token, Duration timeout) {
+    public OkHttpClient defaultClient(String token, Duration timeout) {
         Objects.requireNonNull(token, "OpenAI token required");
-
         return new OkHttpClient.Builder()
                 .addInterceptor(new AuthenticationInterceptor(token))
                 .connectionPool(new ConnectionPool(5, 1, TimeUnit.SECONDS))
@@ -355,12 +361,16 @@ public class OpenAiService {
                 .build();
     }
 
-    public static Retrofit defaultRetrofit(OkHttpClient client, ObjectMapper mapper) {
+    public Retrofit defaultRetrofit(OkHttpClient client, ObjectMapper mapper) {
         return new Retrofit.Builder()
-                .baseUrl(BASE_URL)
+                .baseUrl(apiUrl)
                 .client(client)
                 .addConverterFactory(JacksonConverterFactory.create(mapper))
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .build();
+    }
+
+    public String getToken() {
+        return token;
     }
 }
