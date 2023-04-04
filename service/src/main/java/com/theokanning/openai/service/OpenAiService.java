@@ -87,9 +87,12 @@ public class OpenAiService {
         this(token, DEFAULT_TIMEOUT);
     }
 
-    public OpenAiService(final String token, final String api) {
-        this(token, DEFAULT_TIMEOUT);
-        apiUrl = api;
+    public OpenAiService(final String token, final String apiUrl) {
+        this.apiUrl = apiUrl;
+        this.token = token;
+        this.httpClient = this.defaultClient(token,DEFAULT_TIMEOUT);
+        this.api = this.buildApi(httpClient);
+        this.executorService = httpClient.dispatcher().executorService();
     }
 
     /**
