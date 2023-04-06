@@ -52,7 +52,9 @@ public class OpenAiService {
 
     private String apiUrl = "https://api.openai.com/";
     private String token = "";
-    private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(15);
+    private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofMillis(2_1000);
+
     private final ObjectMapper errorMapper = defaultObjectMapper();
     private OkHttpClient httpClient;
     private OpenAiApi api;
@@ -104,6 +106,30 @@ public class OpenAiService {
     public OpenAiService(final String token, final Duration timeout) {
         this.token = token;
         this.httpClient = this.defaultClient(token,timeout);
+        this.api = this.buildApi(httpClient);
+        this.executorService = httpClient.dispatcher().executorService();
+    }
+
+    /**
+     *
+     * @param token
+     * @param apiUrl
+     * @param timeout
+     */
+    public OpenAiService(final String token, final String apiUrl, final Duration timeout) {
+        this.token = token;
+        this.apiUrl = apiUrl;
+        this.httpClient = this.defaultClient(token,timeout);
+        this.api = this.buildApi(httpClient);
+        this.executorService = httpClient.dispatcher().executorService();
+    }
+
+    /**
+     * build from client
+     * @param client
+     */
+    public OpenAiService(final OkHttpClient client) {
+        this.httpClient = client;
         this.api = this.buildApi(httpClient);
         this.executorService = httpClient.dispatcher().executorService();
     }
@@ -359,8 +385,9 @@ public class OpenAiService {
         Objects.requireNonNull(token, "OpenAI token required");
         return new OkHttpClient.Builder()
                 .addInterceptor(new AuthenticationInterceptor(token))
-                .connectionPool(new ConnectionPool(5, 1, TimeUnit.SECONDS))
+                .connectionPool(new ConnectionPool(10, 10, TimeUnit.SECONDS))
                 .readTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
+                .connectTimeout(DEFAULT_CONNECT_TIMEOUT)
                 .build();
     }
 
