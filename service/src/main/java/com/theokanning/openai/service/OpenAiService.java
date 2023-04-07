@@ -31,6 +31,7 @@ import com.theokanning.openai.model.Model;
 import com.theokanning.openai.moderation.ModerationRequest;
 import com.theokanning.openai.moderation.ModerationResult;
 
+import com.theokanning.openai.service.interceptor.ConnectTimoutRetryInterceptor;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -94,7 +95,7 @@ public class OpenAiService {
         this.token = token;
         this.httpClient = this.defaultClient(token,DEFAULT_TIMEOUT);
         this.api = this.buildApi(httpClient);
-        this.executorService = httpClient.dispatcher().executorService();
+        settingExecutor();
     }
 
     /**
@@ -107,7 +108,7 @@ public class OpenAiService {
         this.token = token;
         this.httpClient = this.defaultClient(token,timeout);
         this.api = this.buildApi(httpClient);
-        this.executorService = httpClient.dispatcher().executorService();
+        settingExecutor();
     }
 
     /**
@@ -121,7 +122,7 @@ public class OpenAiService {
         this.apiUrl = apiUrl;
         this.httpClient = this.defaultClient(token,timeout);
         this.api = this.buildApi(httpClient);
-        this.executorService = httpClient.dispatcher().executorService();
+        settingExecutor();
     }
 
     /**
@@ -131,9 +132,14 @@ public class OpenAiService {
     public OpenAiService(final OkHttpClient client) {
         this.httpClient = client;
         this.api = this.buildApi(httpClient);
-        this.executorService = httpClient.dispatcher().executorService();
+        settingExecutor();
     }
 
+    private void settingExecutor(){
+        httpClient.dispatcher().setMaxRequests(200);
+        httpClient.dispatcher().setMaxRequestsPerHost(50);
+        this.executorService = httpClient.dispatcher().executorService();
+    }
 
     public List<Model> listModels() {
         return execute(api.listModels()).data;
@@ -388,6 +394,9 @@ public class OpenAiService {
                 .connectionPool(new ConnectionPool(10, 10, TimeUnit.SECONDS))
                 .readTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
                 .connectTimeout(DEFAULT_CONNECT_TIMEOUT)
+                .retryOnConnectionFailure(true)
+                //超时重试
+                .addInterceptor(new ConnectTimoutRetryInterceptor(2))
                 .build();
     }
 
