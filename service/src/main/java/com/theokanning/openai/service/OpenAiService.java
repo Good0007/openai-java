@@ -53,8 +53,8 @@ public class OpenAiService {
 
     private String apiUrl = "https://api.openai.com/";
     private String token = "";
-    private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(15);
-    private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofMillis(2_1000);
+    private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(60);
+    private static final int DEFAULT_CONNECT_TIMEOUT = 2;
 
     private final ObjectMapper errorMapper = defaultObjectMapper();
     private OkHttpClient httpClient;
@@ -87,13 +87,13 @@ public class OpenAiService {
      * @param token OpenAi token string "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
      */
     public OpenAiService(final String token) {
-        this(token, DEFAULT_TIMEOUT);
+        this(token, DEFAULT_READ_TIMEOUT);
     }
 
     public OpenAiService(final String token, final String apiUrl) {
         this.apiUrl = apiUrl;
         this.token = token;
-        this.httpClient = this.defaultClient(token,DEFAULT_TIMEOUT);
+        this.httpClient = this.defaultClient(token,DEFAULT_READ_TIMEOUT);
         this.api = this.buildApi(httpClient);
         settingExecutor();
     }
@@ -391,12 +391,12 @@ public class OpenAiService {
         Objects.requireNonNull(token, "OpenAI token required");
         return new OkHttpClient.Builder()
                 .addInterceptor(new AuthenticationInterceptor(token))
-                .connectionPool(new ConnectionPool(10, 10, TimeUnit.SECONDS))
-                .readTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
-                .connectTimeout(DEFAULT_CONNECT_TIMEOUT)
+                .connectionPool(new ConnectionPool(64, 10, TimeUnit.SECONDS))
+                .readTimeout(DEFAULT_READ_TIMEOUT.getSeconds(),TimeUnit.SECONDS)
                 .retryOnConnectionFailure(true)
                 //超时重试
                 .addInterceptor(new ConnectTimoutRetryInterceptor(2))
+                .connectTimeout(DEFAULT_CONNECT_TIMEOUT,TimeUnit.SECONDS)
                 .build();
     }
 

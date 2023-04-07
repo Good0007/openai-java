@@ -30,8 +30,10 @@ public class ConnectTimoutRetryInterceptor implements Interceptor {
             if(err.contains("connect timed out") && maxRetry > retryCent){
                 return retry(chain, retryCent + 1);
             }
-        } finally {
-            return response;
         }
+        if(response == null){
+            throw new RuntimeException("Failed to connect host:" + request.url());
+        }
+        return response;
     }
 }
