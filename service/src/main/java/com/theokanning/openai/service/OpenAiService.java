@@ -53,7 +53,7 @@ public class OpenAiService {
 
     private String apiUrl = "https://api.openai.com/";
     private String token = "";
-    private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(60);
+    private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(100);
     private static final int DEFAULT_CONNECT_TIMEOUT = 2;
 
     private final ObjectMapper errorMapper = defaultObjectMapper();
