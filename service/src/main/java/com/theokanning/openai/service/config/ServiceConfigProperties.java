@@ -3,12 +3,13 @@ package com.theokanning.openai.service.config;
 import java.io.Serializable;
 
 public class ServiceConfigProperties implements Serializable {
-    private String apiUrl;
-    private Integer tokenId;
+    private String apiUrl = "https://api.openai.com/";
+    private String tokenId;
+    private String tokenName;
     private String tokenKey;
     private String tag;
-    private String robotType;
-    private String robotModel;
+    private String robotType = "chatgpt";
+    private String robotModel = "gpt-3.5-turbo";
     private Integer maxTokens = 3800;
     private Integer requestMaxTokens = 2000;
     private String envType;
@@ -21,12 +22,20 @@ public class ServiceConfigProperties implements Serializable {
         this.apiUrl = apiUrl;
     }
 
-    public Integer getTokenId() {
+    public String getTokenId() {
         return tokenId;
     }
 
-    public void setTokenId(Integer tokenId) {
+    public void setTokenId(String tokenId) {
         this.tokenId = tokenId;
+    }
+
+    public String getTokenName() {
+        return tokenName;
+    }
+
+    public void setTokenName(String tokenName) {
+        this.tokenName = tokenName;
     }
 
     public String getTokenKey() {
@@ -89,7 +98,8 @@ public class ServiceConfigProperties implements Serializable {
     public String toString() {
         return "ServiceConfigProperties{" +
                 "apiUrl='" + apiUrl + '\'' +
-                ", tokenId=" + tokenId +
+                ", tokenId='" + tokenId + '\'' +
+                ", tokenName='" + tokenName + '\'' +
                 ", tokenKey='" + tokenKey + '\'' +
                 ", tag='" + tag + '\'' +
                 ", robotType='" + robotType + '\'' +
