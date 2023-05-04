@@ -31,6 +31,7 @@ import com.theokanning.openai.model.Model;
 import com.theokanning.openai.moderation.ModerationRequest;
 import com.theokanning.openai.moderation.ModerationResult;
 
+import com.theokanning.openai.service.config.ServiceConfigProperties;
 import com.theokanning.openai.service.interceptor.ConnectTimoutRetryInterceptor;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
@@ -51,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 
 public class OpenAiService {
 
+    private ServiceConfigProperties configProperties;
     private String apiUrl = "https://api.openai.com/";
     private String token = "";
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(100);
@@ -90,10 +92,11 @@ public class OpenAiService {
         this(token, DEFAULT_READ_TIMEOUT);
     }
 
-    public OpenAiService(final String token, final String apiUrl) {
-        this.apiUrl = apiUrl;
-        this.token = token;
-        this.httpClient = this.defaultClient(token,DEFAULT_READ_TIMEOUT);
+    public OpenAiService(final ServiceConfigProperties configProperties) {
+        this.configProperties = configProperties;
+        this.token = configProperties.getTokenKey();
+        this.apiUrl = configProperties.getApiUrl();
+        this.httpClient = this.defaultClient(configProperties.getTokenKey(),DEFAULT_READ_TIMEOUT);
         this.api = this.buildApi(httpClient);
         settingExecutor();
     }
@@ -411,5 +414,13 @@ public class OpenAiService {
 
     public String getToken() {
         return token;
+    }
+
+    public ServiceConfigProperties getConfigProperties() {
+        return configProperties;
+    }
+
+    public void setConfigProperties(ServiceConfigProperties configProperties) {
+        this.configProperties = configProperties;
     }
 }
