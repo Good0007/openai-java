@@ -32,7 +32,9 @@ import com.theokanning.openai.moderation.ModerationRequest;
 import com.theokanning.openai.moderation.ModerationResult;
 
 import com.theokanning.openai.service.config.ServiceConfigProperties;
+import com.theokanning.openai.service.interceptor.AuthenticationInterceptor;
 import com.theokanning.openai.service.interceptor.ConnectTimoutRetryInterceptor;
+import com.theokanning.openai.service.interceptor.QueryParamsInterceptor;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -45,7 +47,9 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -309,6 +313,21 @@ public class OpenAiService {
         return execute(api.createModeration(request));
     }
 
+
+    /*** 文心一言 ****/
+    public ChatCompletionResult createBaiduChatCompletion(ChatCompletionRequest request) {
+        return execute(api.createBaiduChatCompletion(request));
+    }
+
+
+    public Flowable<ChatCompletionChunk> streamBaiduChatCompletion(ChatCompletionRequest request) {
+        request.setStream(true);
+        return stream(api.createBaiduChatCompletionStream(request), ChatCompletionChunk.class);
+    }
+    /*** 文心一言 ****/
+
+
+
     /**
      * Calls the Open AI api, returns the response, and parses error messages if the request fails
      */
@@ -392,8 +411,18 @@ public class OpenAiService {
 
     public OkHttpClient defaultClient(String token, Duration timeout) {
         Objects.requireNonNull(token, "OpenAI token required");
+        Interceptor authInterceptor;
+        if(apiUrl.contains("aip.baidubce.com")){
+            //文心一言token加入
+            Map<String,String> param = new HashMap<>();
+            param.put("access_token",token);
+            authInterceptor = new QueryParamsInterceptor(param);
+        } else {
+            //其他类别的认证方式
+            authInterceptor = new AuthenticationInterceptor(token);
+        }
         return new OkHttpClient.Builder()
-                .addInterceptor(new AuthenticationInterceptor(token))
+                .addInterceptor(authInterceptor)
                 .connectionPool(new ConnectionPool(64, 10, TimeUnit.SECONDS))
                 .readTimeout(DEFAULT_READ_TIMEOUT.getSeconds(),TimeUnit.SECONDS)
                 .retryOnConnectionFailure(true)
@@ -401,6 +430,7 @@ public class OpenAiService {
                 .addInterceptor(new ConnectTimoutRetryInterceptor(2))
                 .connectTimeout(DEFAULT_CONNECT_TIMEOUT,TimeUnit.SECONDS)
                 .build();
+
     }
 
     public Retrofit defaultRetrofit(OkHttpClient client, ObjectMapper mapper) {

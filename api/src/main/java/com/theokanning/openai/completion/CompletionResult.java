@@ -1,5 +1,6 @@
 package com.theokanning.openai.completion;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.theokanning.openai.Usage;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,6 +13,7 @@ import java.util.List;
  * https://beta.openai.com/docs/api-reference/completions/create
  */
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CompletionResult {
     /**
      * A unique id assigned to this completion.
@@ -42,4 +44,11 @@ public class CompletionResult {
      * The API usage for this request
      */
     Usage usage;
+
+    /**
+     * 百度文心一言参数
+     */
+    String sentence_id;
+    private Boolean is_end;
+    private String result;
 }

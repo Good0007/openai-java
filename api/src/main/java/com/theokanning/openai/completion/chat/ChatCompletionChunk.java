@@ -1,4 +1,5 @@
 package com.theokanning.openai.completion.chat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.List;
  * Object containing a response chunk from the chat completions streaming api.
  */
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ChatCompletionChunk {
 	/**
      * Unique id assigned to this chat completion.
@@ -32,4 +34,11 @@ public class ChatCompletionChunk {
      * A list of all generated completions.
      */
     List<ChatCompletionChoice> choices;
+
+    /**
+     * 百度文心一言参数
+     */
+    String sentence_id;
+    Boolean is_end;
+    String result;
 }

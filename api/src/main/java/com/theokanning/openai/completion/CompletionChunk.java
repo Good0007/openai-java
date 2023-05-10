@@ -1,5 +1,6 @@
 package com.theokanning.openai.completion;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import java.util.List;
 
@@ -9,6 +10,7 @@ import java.util.List;
  * https://beta.openai.com/docs/api-reference/completions/create
  */
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CompletionChunk {
     /**
      * A unique id assigned to this completion.
@@ -34,4 +36,11 @@ public class CompletionChunk {
      * A list of generated completions.
      */
     List<CompletionChoice> choices;
+
+    /**
+     * 百度文心一言参数
+     */
+    String sentence_id;
+    private Boolean is_end;
+    private String result;
 }

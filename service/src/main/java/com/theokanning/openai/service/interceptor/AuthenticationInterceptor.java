@@ -1,4 +1,4 @@
-package com.theokanning.openai.service;
+package com.theokanning.openai.service.interceptor;
 
 import okhttp3.Interceptor;
 import okhttp3.Request;
@@ -13,7 +13,7 @@ public class AuthenticationInterceptor implements Interceptor {
 
     private final String token;
 
-    AuthenticationInterceptor(String token) {
+    public AuthenticationInterceptor(String token) {
         this.token = token;
     }
 

@@ -1,4 +1,5 @@
 package com.theokanning.openai.completion.chat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.theokanning.openai.Usage;
 import lombok.Data;
 
@@ -8,6 +9,7 @@ import java.util.List;
  * Object containing a response from the chat completions api.
  */
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ChatCompletionResult {
 
     /**
@@ -39,5 +41,12 @@ public class ChatCompletionResult {
      * The API usage for this request.
      */
     Usage usage;
+
+    /**
+     * 百度文心一言参数
+     */
+    String sentence_id;
+    Boolean is_end;
+    String result;
 
 }

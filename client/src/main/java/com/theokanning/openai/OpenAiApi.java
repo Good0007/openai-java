@@ -29,6 +29,14 @@ import retrofit2.http.*;
 
 public interface OpenAiApi {
 
+    /** 接入文心一言 ***/
+    @POST("/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions")
+    Single<ChatCompletionResult> createBaiduChatCompletion(@Body ChatCompletionRequest request);
+
+    @Streaming
+    @POST("/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions")
+    Call<ResponseBody> createBaiduChatCompletionStream(@Body ChatCompletionRequest request);
+    /** 接入文心一言 ***/
 
     /**
      * {
