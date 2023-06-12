@@ -19,6 +19,7 @@ import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.edit.EditResult;
 import com.theokanning.openai.embedding.EmbeddingRequest;
 import com.theokanning.openai.embedding.EmbeddingResult;
+import com.theokanning.openai.embedding.EmbeddingSingleRequest;
 import com.theokanning.openai.file.File;
 import com.theokanning.openai.finetune.FineTuneEvent;
 import com.theokanning.openai.finetune.FineTuneRequest;
@@ -201,6 +202,10 @@ public class OpenAiService {
     }
 
     public EmbeddingResult createEmbeddings(EmbeddingRequest request) {
+        return execute(api.createEmbeddings(request));
+    }
+
+    public EmbeddingResult createEmbeddings(EmbeddingSingleRequest request) {
         return execute(api.createEmbeddings(request));
     }
 

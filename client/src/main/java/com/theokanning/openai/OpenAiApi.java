@@ -9,12 +9,12 @@ import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.edit.EditResult;
 import com.theokanning.openai.embedding.EmbeddingRequest;
 import com.theokanning.openai.embedding.EmbeddingResult;
+import com.theokanning.openai.embedding.EmbeddingSingleRequest;
 import com.theokanning.openai.engine.Engine;
 import com.theokanning.openai.file.File;
 import com.theokanning.openai.finetune.FineTuneEvent;
 import com.theokanning.openai.finetune.FineTuneRequest;
 import com.theokanning.openai.finetune.FineTuneResult;
-import com.theokanning.openai.image.CreateImageEditRequest;
 import com.theokanning.openai.image.CreateImageRequest;
 import com.theokanning.openai.image.ImageResult;
 import com.theokanning.openai.model.Model;
@@ -97,6 +97,9 @@ public interface OpenAiApi {
 
     @POST("/v1/embeddings")
     Single<EmbeddingResult> createEmbeddings(@Body EmbeddingRequest request);
+
+    @POST("/v1/embeddings")
+    Single<EmbeddingResult> createEmbeddings(@Body EmbeddingSingleRequest request);
 
     @Deprecated
     @POST("/v1/engines/{engine_id}/embeddings")
